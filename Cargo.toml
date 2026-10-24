@@ -15,7 +15,7 @@ futures-util = "0.3.34"
 hex = "0.4.3"
 indicatif = "0.18.6"
 libc = "0.2.191"
-minijinja = "3.0.3"
+minijinja = { version = "3.0.3", features = ["serde"] }
 owo-colors = "4.4.0"
 rand = "0.10.3"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls", "http2"] }
@@ -31,6 +31,7 @@ toml = "1.1.8"
 assert_cmd = "2.2.2"
 predicates = "3.1.4"
 serde_json = "1.0.154"
+serde_yaml_ng = "0.10.0"
 tempfile = "3.27.0"
 
 [profile.release]

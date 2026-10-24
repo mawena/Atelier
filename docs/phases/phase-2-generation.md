@@ -15,7 +15,7 @@ fichiers Compose, LiteLLM et Caddy corrects et sûrs.
 - `src/secrets.rs` : clé maître, mot de passe Postgres, secret et clé Open WebUI ;
   générés une seule fois, fichier en 0600.
 - `templates/*.j2` et `src/render.rs` :
-  - `compose.yml` : réseaux `edge` et `internal` (`internal: true`), volumes en
+  - `compose.yml` : réseaux `front` (privé) et `db` (`internal: true`), volumes en
     bind mount sous `/var/lib/atelier`, healthchecks, réservation GPU si détecté,
     services optionnels (vLLM, Open WebUI).
   - `litellm.yaml` : un modèle par modèle installé, alias `default`, embeddings,

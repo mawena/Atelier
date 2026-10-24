@@ -12,28 +12,29 @@ est le CLI `atelier`, écrit en Rust, qui génère la configuration et pilote Do
 ```
                 Internet / LAN (seulement si ouvert explicitement)
                                   │
-                                  ▼
  ┌──────────────────────────── hôte Linux ─────────────────────────────┐
- │                                                                     │
+ │                                  │                                  │
  │   127.0.0.1:8080 (défaut)  ou  :80/:443 (atelier expose --domain)   │
  │                                  │                                  │
  │                        ┌─────────▼─────────┐                        │
- │  réseau "edge"         │   caddy (edge)    │  /health, /v1/*        │
+ │                        │   caddy (edge)    │  /health, /v1/*        │
  │                        │  HTTPS Let's Enc. │  tout le reste → 404   │
  │                        └───┬───────────┬───┘                        │
- │                            │           │ (port Web UI, optionnel)   │
- │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│
- │  réseau "internal"         ▼           ▼        (internal: true)    │
- │                     ┌──────────┐  ┌──────────┐                      │
- │  127.0.0.1:4000 ───►│ litellm  │◄─┤ open-   │                      │
- │  (admin, CLI only)  │ passerelle│  │ webui   │                      │
- │                     └──┬────┬──┘  └──────────┘                      │
- │                        │    │                                       │
- │                ┌───────▼┐  ┌▼─────────┐                             │
- │                │postgres│  │ ollama   │  ou  vllm (GPU puissant)    │
- │                │ clés,  │  │ moteur   │  GPU NVIDIA si détecté,     │
- │                │ journaux│ │ GGUF     │  repli CPU sinon            │
- │                └────────┘  └──────────┘                             │
+ │  réseau privé "front"      │           │ port Web UI (optionnel)    │
+ │  (aucun port publié)       ▼           ▼                            │
+ │                     ┌───────────┐  ┌───────────┐                    │
+ │  127.0.0.1:8081 ───►│  litellm  │◄─┤ open-webui│                    │
+ │  (admin, CLI seul)  │ passerelle│  └───────────┘                    │
+ │                     └──┬─────┬──┘                                   │
+ │                        │     │                                      │
+ │                        │   ┌─▼────────┐                             │
+ │                        │   │ ollama   │  + vllm (GPU puissant)      │
+ │                        │   │ moteur   │  GPU NVIDIA si détecté,     │
+ │                        │   └──────────┘  repli CPU sinon            │
+ │  réseau "db"           │                                            │
+ │  (internal: true)  ┌───▼──────┐                                     │
+ │                    │ postgres │  clés, limites, journaux            │
+ │                    └──────────┘                                     │
  │                                                                     │
  │   /etc/atelier       configuration générée + secrets (0600)         │
  │   /var/lib/atelier   modèles, base, données Web UI, certificats     │
@@ -54,6 +55,18 @@ est le CLI `atelier`, écrit en Rust, qui génère la configuration et pilote Do
 Les versions sont épinglées dans la configuration (`[images]`) et mises à jour par
 `atelier update`.
 
+## Modèles exposés
+
+Chaque modèle installé est exposé sous son nom (`qwen3:8b`, `nomic-embed-text`…),
+plus deux alias stables pour les clients :
+
+- `default` : modèle de chat par défaut (`atelier model default <nom>`) ;
+- `default-embedding` : modèle d'embeddings par défaut.
+
+Avec `engine.kind = vllm`, vLLM sert en plus un modèle Hugging Face
+(`engine.vllm_model`) ; Ollama reste disponible pour les embeddings et les autres
+modèles.
+
 ## Flux d'une requête
 
 1. Le client (application Android, curl…) appelle `POST /v1/chat/completions` avec
@@ -72,8 +85,11 @@ répond `{"status":"ok","version":"<version atelier>"}` (200) ou
 
 - Caddy publie sur `127.0.0.1` tant que `listen` n'est pas changé explicitement
   (`atelier config set server.listen 0.0.0.0`) ou qu'un domaine n'est pas activé.
-- Le moteur (Ollama/vLLM), Postgres et Open WebUI sont sur un réseau Docker
-  `internal: true` : aucun port publié, aucun accès sortant direct.
+- Le moteur (Ollama/vLLM) et Open WebUI ne publient aucun port : ils ne sont
+  joignables que depuis le réseau privé `front` (ils gardent un accès sortant pour
+  télécharger les modèles).
+- Postgres est seul sur le réseau `db` (`internal: true`) avec LiteLLM : aucun
+  port publié, aucun accès extérieur.
 - L'API d'administration de LiteLLM n'est publiée que sur `127.0.0.1:<admin_port>`
   (utilisée par le CLI pour les clés) ; Caddy ne la relaie jamais.
 - Chaque requête `/v1/*` exige une clé. La clé maître et les mots de passe sont
@@ -132,6 +148,7 @@ appelés en sous-processus ; tout le reste passe par l'API Docker (bollard) et H
 /etc/atelier/
 ├── atelier.toml        configuration source (éditée par `atelier config set`)
 ├── secrets.env         clé maître, mots de passe (0600)
+├── models.json         modèles installés (servis par la passerelle)
 ├── compose.yml         généré
 ├── litellm.yaml        généré (liste des modèles)
 └── Caddyfile           généré

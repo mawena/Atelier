@@ -4,6 +4,9 @@ mod config;
 mod error;
 mod output;
 mod paths;
+mod render;
+mod secrets;
+mod system;
 
 use clap::FromArgMatches;
 

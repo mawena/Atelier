@@ -25,11 +25,11 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 2 — Détection système et génération de la pile · [détail](docs/phases/phase-2-generation.md)
 
-- [ ] Détection OS, architecture, RAM, disque, CPU
-- [ ] Détection GPU NVIDIA (pilote, VRAM, toolkit)
-- [ ] Génération des secrets
-- [ ] Templates `compose.yml`, `litellm.yaml`, `Caddyfile`
-- [ ] Variantes CPU / GPU, Ollama / vLLM, Web UI, domaine
+- [x] Détection OS, architecture, RAM, disque, CPU
+- [x] Détection GPU NVIDIA (pilote, VRAM, toolkit)
+- [x] Génération des secrets
+- [x] Templates `compose.yml`, `litellm.yaml`, `Caddyfile`
+- [x] Variantes CPU / GPU, Ollama / vLLM, Web UI, domaine
 
 ## Phase 3 — Cycle de vie de la pile · [détail](docs/phases/phase-3-cycle-de-vie.md)
 
