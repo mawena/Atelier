@@ -1,0 +1,78 @@
+# Feuille de route
+
+Avancement du projet Atelier, phase par phase. Chaque phase a son fichier détaillé
+(objectifs, livrables, critères d'acceptation) dans [docs/phases/](docs/phases/).
+Les cases sont cochées au fil de l'avancement.
+
+Versionnage : git flow (`main` = versions publiées, `develop` = intégration,
+une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
+
+## Phase 0 — Architecture et plan · [détail](docs/phases/phase-0-architecture.md)
+
+- [x] Document d'architecture
+- [x] Arborescence du dépôt
+- [x] Plan par phases avec critères d'acceptation
+
+## Phase 1 — Socle du CLI · [détail](docs/phases/phase-1-socle-cli.md)
+
+- [ ] Projet Cargo, dépendances, profil release statique
+- [ ] Arbre de commandes clap complet avec aide détaillée
+- [ ] Options globales `--json`, `--yes`, `--no-color`
+- [ ] Configuration `atelier.toml` (valeurs par défaut, lecture, écriture)
+- [ ] Chemins surchargeables (`ATELIER_CONFIG_DIR`, `ATELIER_DATA_DIR`)
+- [ ] Erreurs typées et codes de retour
+- [ ] `atelier version`, `atelier config show`
+
+## Phase 2 — Détection système et génération de la pile · [détail](docs/phases/phase-2-generation.md)
+
+- [ ] Détection OS, architecture, RAM, disque, CPU
+- [ ] Détection GPU NVIDIA (pilote, VRAM, toolkit)
+- [ ] Génération des secrets
+- [ ] Templates `compose.yml`, `litellm.yaml`, `Caddyfile`
+- [ ] Variantes CPU / GPU, Ollama / vLLM, Web UI, domaine
+
+## Phase 3 — Cycle de vie de la pile · [détail](docs/phases/phase-3-cycle-de-vie.md)
+
+- [ ] Client Docker (bollard) et appel de `docker compose`
+- [ ] Installation de Docker et du NVIDIA Container Toolkit
+- [ ] `atelier install`
+- [ ] `atelier uninstall [--purge]`
+- [ ] `atelier start | stop | restart`
+- [ ] `atelier status`
+- [ ] `atelier logs [service] [-f]`
+- [ ] `atelier update`
+
+## Phase 4 — Modèles · [détail](docs/phases/phase-4-modeles.md)
+
+- [ ] Catalogue des modèles recommandés
+- [ ] `atelier model list | search | pull | remove | default`
+- [ ] `atelier model recommend` selon RAM/VRAM
+- [ ] Synchronisation de la liste des modèles avec la passerelle
+
+## Phase 5 — Clés, configuration et HTTPS · [détail](docs/phases/phase-5-cles-config.md)
+
+- [ ] `atelier key create | list | revoke`
+- [ ] `atelier config set` typé et validé, application automatique
+- [ ] `atelier expose --domain`
+
+## Phase 6 — Outils · [détail](docs/phases/phase-6-outils.md)
+
+- [ ] `atelier chat`
+- [ ] `atelier test` (latence, tokens/s)
+- [ ] `atelier doctor`
+- [ ] `atelier backup | restore`
+
+## Phase 7 — Distribution, CI et documentation · [détail](docs/phases/phase-7-distribution.md)
+
+- [ ] `install.sh` (installation en une ligne)
+- [ ] Mise à jour du CLI par `atelier update`
+- [ ] CI : format, lint, tests, binaires musl amd64/arm64
+- [ ] Publication des versions (binaires + sommes de contrôle)
+- [ ] README, guide d'installation, référence CLI, référence API, tableau des modèles
+
+## Phase 8 — Validation de bout en bout et version 0.1.0 · [détail](docs/phases/phase-8-validation.md)
+
+- [ ] Installation réelle sur une machine propre (CPU)
+- [ ] Contrat d'API vérifié (health, models, chat stream/non-stream, embeddings, auth)
+- [ ] Désinstallation et purge vérifiées
+- [ ] Version 0.1.0 publiée sur `main`
