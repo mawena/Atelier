@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: mlugg/setup-zig@v2
+      - run: cargo install cargo-zigbuild --locked
+      - run: cargo zigbuild --release --target ${{ matrix.target }}
+        env:
+          ATELIER_COMMIT: ${{ github.sha }}
+      - run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/atelier dist/atelier-${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: atelier-${{ matrix.target }}
+          path: dist/atelier-${{ matrix.target }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: vérification de la version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          crate=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)
+          test "$tag" = "$crate" || { echo "tag $tag ≠ Cargo.toml $crate"; exit 1; }
+      - name: sommes de contrôle
+        run: cd dist && sha256sum atelier-* > SHA256SUMS && cat SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/atelier-*
+            dist/SHA256SUMS
+            install.sh
+          generate_release_notes: true

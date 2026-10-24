@@ -64,11 +64,11 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 7 — Distribution, CI et documentation · [détail](docs/phases/phase-7-distribution.md)
 
-- [ ] `install.sh` (installation en une ligne)
-- [ ] Mise à jour du CLI par `atelier update`
-- [ ] CI : format, lint, tests, binaires musl amd64/arm64
-- [ ] Publication des versions (binaires + sommes de contrôle)
-- [ ] README, guide d'installation, référence CLI, référence API, tableau des modèles
+- [x] `install.sh` (installation en une ligne)
+- [x] Mise à jour du CLI par `atelier update`
+- [ ] CI : format, lint, tests, binaires musl amd64/arm64 — workflow écrit, à valider au premier push GitHub
+- [ ] Publication des versions (binaires + sommes de contrôle) — workflow écrit, à valider au premier tag
+- [x] README, guide d'installation, référence CLI, référence API, tableau des modèles
 
 ## Phase 8 — Validation de bout en bout et version 0.1.0 · [détail](docs/phases/phase-8-validation.md)
 

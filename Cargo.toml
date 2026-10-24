@@ -2,6 +2,10 @@
 name = "atelier"
 version = "0.1.0"
 edition = "2024"
+description = "Installe et gère des modèles de langage open source derrière une API compatible OpenAI, dans Docker."
+license = "MIT"
+authors = ["mawena"]
+rust-version = "1.88"
 
 [dependencies]
 anyhow = "1.0.104"
