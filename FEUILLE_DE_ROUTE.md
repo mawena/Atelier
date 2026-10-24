@@ -51,9 +51,9 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 5 — Clés, configuration et HTTPS · [détail](docs/phases/phase-5-cles-config.md)
 
-- [ ] `atelier key create | list | revoke`
-- [ ] `atelier config set` typé et validé, application automatique
-- [ ] `atelier expose --domain`
+- [x] `atelier key create | list | revoke`
+- [x] `atelier config set` typé et validé, application automatique
+- [x] `atelier expose --domain`
 
 ## Phase 6 — Outils · [détail](docs/phases/phase-6-outils.md)
 

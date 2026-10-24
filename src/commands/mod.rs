@@ -1,7 +1,9 @@
 //! Implémentation des commandes.
 
 mod config;
+mod expose;
 mod install;
+mod key;
 mod lifecycle;
 mod model;
 mod selfupdate;
@@ -42,6 +44,8 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             to,
         } => update::run(&ctx, images_only, cli_only, to).await,
         Command::Model(cmd) => model::run(&ctx, cmd).await,
+        Command::Key(cmd) => key::run(&ctx, cmd).await,
+        Command::Expose { domain, email, off } => expose::run(&ctx, domain, email, off).await,
         other => Err(anyhow::anyhow!("commande pas encore disponible : {other:?}")),
     }
 }
