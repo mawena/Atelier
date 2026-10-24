@@ -72,7 +72,11 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 8 — Validation de bout en bout et version 0.1.0 · [détail](docs/phases/phase-8-validation.md)
 
-- [ ] Installation réelle sur une machine propre (CPU)
-- [ ] Contrat d'API vérifié (health, models, chat stream/non-stream, embeddings, auth)
-- [ ] Désinstallation et purge vérifiées
+- [x] Script de validation `scripts/e2e.sh`
+- [x] Installation réelle de la pile (passerelle, base, proxy) sur Ubuntu 24.04, CPU
+- [ ] Installation réelle avec le moteur Ollama et un modèle — bloquée : espace disque insuffisant sur la machine de test (image Ollama ≈ 7 Go)
+- [x] Contrat d'API vérifié : `/health`, `/v1/models`, authentification (401), routes d'administration fermées (404)
+- [ ] Contrat d'API vérifié : chat (stream et non-stream, `data: [DONE]`) et embeddings — nécessite le moteur
+- [x] Clés (création, limite RPM → 429, révocation → 401), configuration, sauvegarde/restauration vérifiées
+- [x] Désinstallation et purge vérifiées
 - [ ] Version 0.1.0 publiée sur `main`
