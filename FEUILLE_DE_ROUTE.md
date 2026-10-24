@@ -57,10 +57,10 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 6 — Outils · [détail](docs/phases/phase-6-outils.md)
 
-- [ ] `atelier chat`
-- [ ] `atelier test` (latence, tokens/s)
-- [ ] `atelier doctor`
-- [ ] `atelier backup | restore`
+- [x] `atelier chat`
+- [x] `atelier test` (latence, tokens/s)
+- [x] `atelier doctor`
+- [x] `atelier backup | restore`
 
 ## Phase 7 — Distribution, CI et documentation · [détail](docs/phases/phase-7-distribution.md)
 

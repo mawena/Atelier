@@ -1,3 +1,4 @@
+mod api;
 mod catalog;
 mod cli;
 mod commands;
@@ -11,6 +12,7 @@ mod paths;
 mod provision;
 mod render;
 mod secrets;
+mod sse;
 mod stack;
 mod system;
 

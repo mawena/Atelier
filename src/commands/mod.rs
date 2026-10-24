@@ -1,6 +1,9 @@
 //! Implémentation des commandes.
 
+mod backup;
+mod chat;
 mod config;
+mod doctor;
 mod expose;
 mod install;
 mod key;
@@ -8,6 +11,7 @@ mod lifecycle;
 mod model;
 mod selfupdate;
 mod status;
+mod test;
 mod update;
 mod version;
 
@@ -46,6 +50,13 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Model(cmd) => model::run(&ctx, cmd).await,
         Command::Key(cmd) => key::run(&ctx, cmd).await,
         Command::Expose { domain, email, off } => expose::run(&ctx, domain, email, off).await,
-        other => Err(anyhow::anyhow!("commande pas encore disponible : {other:?}")),
+        Command::Chat { model, system } => chat::run(&ctx, model, system).await,
+        Command::Test { model, prompt } => test::run(&ctx, model, prompt).await,
+        Command::Doctor => doctor::run(&ctx).await,
+        Command::Backup {
+            output,
+            with_models,
+        } => backup::backup(&ctx, output, with_models).await,
+        Command::Restore { file } => backup::restore(&ctx, &file).await,
     }
 }
