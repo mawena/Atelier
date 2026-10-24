@@ -378,7 +378,12 @@ Exemples :
 /// Construit la commande avec les textes d'aide traduits.
 pub fn command() -> clap::Command {
     use clap::CommandFactory;
-    localize(Cli::command().help_template(HELP_TEMPLATE), true)
+    localize(
+        Cli::command()
+            .help_template(HELP_TEMPLATE)
+            .args_override_self(true),
+        true,
+    )
 }
 
 const HELP_TEMPLATE: &str =

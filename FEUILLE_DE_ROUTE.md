@@ -33,14 +33,14 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 3 — Cycle de vie de la pile · [détail](docs/phases/phase-3-cycle-de-vie.md)
 
-- [ ] Client Docker (bollard) et appel de `docker compose`
-- [ ] Installation de Docker et du NVIDIA Container Toolkit
-- [ ] `atelier install`
-- [ ] `atelier uninstall [--purge]`
-- [ ] `atelier start | stop | restart`
-- [ ] `atelier status`
-- [ ] `atelier logs [service] [-f]`
-- [ ] `atelier update`
+- [x] Client Docker (bollard) et appel de `docker compose`
+- [x] Installation de Docker et du NVIDIA Container Toolkit
+- [x] `atelier install`
+- [x] `atelier uninstall [--purge]`
+- [x] `atelier start | stop | restart`
+- [x] `atelier status`
+- [x] `atelier logs [service] [-f]`
+- [x] `atelier update`
 
 ## Phase 4 — Modèles · [détail](docs/phases/phase-4-modeles.md)
 

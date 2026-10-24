@@ -1,11 +1,17 @@
+mod catalog;
 mod cli;
 mod commands;
 mod config;
+mod docker;
+mod engine;
 mod error;
+mod gateway;
 mod output;
 mod paths;
+mod provision;
 mod render;
 mod secrets;
+mod stack;
 mod system;
 
 use clap::FromArgMatches;

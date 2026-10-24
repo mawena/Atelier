@@ -201,6 +201,7 @@ pub struct Changes {
 }
 
 impl Changes {
+    #[cfg(test)]
     pub fn any(&self) -> bool {
         self.compose || self.litellm || self.caddy
     }

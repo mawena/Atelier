@@ -1,6 +1,11 @@
 //! Implémentation des commandes.
 
 mod config;
+mod install;
+mod lifecycle;
+mod selfupdate;
+mod status;
+mod update;
 mod version;
 
 use crate::cli::{Cli, Command};
@@ -19,8 +24,22 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
         Command::Version => version::run(),
         Command::Help { command } => crate::cli::print_help(&command),
         Command::Config(cmd) => config::run(&ctx, cmd).await,
-        other => Err(anyhow::anyhow!(
-            "commande pas encore disponible : {other:?}"
-        )),
+        Command::Install(args) => install::run(&ctx, args).await,
+        Command::Uninstall { purge, images } => lifecycle::uninstall(&ctx, purge, images).await,
+        Command::Start => lifecycle::start(&ctx).await,
+        Command::Stop => lifecycle::stop(&ctx).await,
+        Command::Restart { service } => lifecycle::restart(&ctx, service).await,
+        Command::Status => status::run(&ctx).await,
+        Command::Logs {
+            service,
+            follow,
+            tail,
+        } => lifecycle::logs(&ctx, service, follow, tail).await,
+        Command::Update {
+            images_only,
+            cli_only,
+            to,
+        } => update::run(&ctx, images_only, cli_only, to).await,
+        other => Err(anyhow::anyhow!("commande pas encore disponible : {other:?}")),
     }
 }

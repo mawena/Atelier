@@ -320,22 +320,6 @@ impl Config {
         *self = updated;
         Ok(())
     }
-
-    /// Liste de toutes les clés modifiables.
-    pub fn keys(&self) -> Vec<String> {
-        let mut out = Vec::new();
-        if let Ok(toml::Value::Table(t)) = toml::Value::try_from(self) {
-            for (section, fields) in t {
-                if let toml::Value::Table(f) = fields {
-                    for k in f.keys() {
-                        out.push(format!("{section}.{k}"));
-                    }
-                }
-            }
-        }
-        out
-    }
-
     /// URL publique de l'API.
     pub fn public_url(&self) -> String {
         if !self.server.domain.is_empty() {
