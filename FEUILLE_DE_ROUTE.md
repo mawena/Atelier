@@ -15,13 +15,13 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 1 — Socle du CLI · [détail](docs/phases/phase-1-socle-cli.md)
 
-- [ ] Projet Cargo, dépendances, profil release statique
-- [ ] Arbre de commandes clap complet avec aide détaillée
-- [ ] Options globales `--json`, `--yes`, `--no-color`
-- [ ] Configuration `atelier.toml` (valeurs par défaut, lecture, écriture)
-- [ ] Chemins surchargeables (`ATELIER_CONFIG_DIR`, `ATELIER_DATA_DIR`)
-- [ ] Erreurs typées et codes de retour
-- [ ] `atelier version`, `atelier config show`
+- [x] Projet Cargo, dépendances, profil release statique
+- [x] Arbre de commandes clap complet avec aide détaillée
+- [x] Options globales `--json`, `--yes`, `--no-color`
+- [x] Configuration `atelier.toml` (valeurs par défaut, lecture, écriture)
+- [x] Chemins surchargeables (`ATELIER_CONFIG_DIR`, `ATELIER_DATA_DIR`)
+- [x] Erreurs typées et codes de retour
+- [x] `atelier version`, `atelier config show`
 
 ## Phase 2 — Détection système et génération de la pile · [détail](docs/phases/phase-2-generation.md)
 
