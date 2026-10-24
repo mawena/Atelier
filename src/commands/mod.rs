@@ -3,6 +3,7 @@
 mod config;
 mod install;
 mod lifecycle;
+mod model;
 mod selfupdate;
 mod status;
 mod update;
@@ -40,6 +41,7 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
             cli_only,
             to,
         } => update::run(&ctx, images_only, cli_only, to).await,
+        Command::Model(cmd) => model::run(&ctx, cmd).await,
         other => Err(anyhow::anyhow!("commande pas encore disponible : {other:?}")),
     }
 }

@@ -44,10 +44,10 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 ## Phase 4 — Modèles · [détail](docs/phases/phase-4-modeles.md)
 
-- [ ] Catalogue des modèles recommandés
-- [ ] `atelier model list | search | pull | remove | default`
-- [ ] `atelier model recommend` selon RAM/VRAM
-- [ ] Synchronisation de la liste des modèles avec la passerelle
+- [x] Catalogue des modèles recommandés
+- [x] `atelier model list | search | pull | remove | default`
+- [x] `atelier model recommend` selon RAM/VRAM
+- [x] Synchronisation de la liste des modèles avec la passerelle
 
 ## Phase 5 — Clés, configuration et HTTPS · [détail](docs/phases/phase-5-cles-config.md)
 
