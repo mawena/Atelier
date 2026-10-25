@@ -66,13 +66,16 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 - [x] `install.sh` (installation en une ligne)
 - [x] Mise à jour du CLI par `atelier update`
-- [ ] CI : format, lint, tests, binaires musl amd64/arm64 — workflow écrit, à valider au premier push GitHub
-- [ ] Publication des versions (binaires + sommes de contrôle) — workflow écrit, à valider au premier tag
+- [x] CI : format, lint, tests, binaires musl amd64/arm64 — validée localement (actionlint, étapes rejouées, compilation croisée zig) ; première exécution GitHub au premier push
+- [x] Publication des versions (binaires + sommes de contrôle) — simulée localement (install.sh et `update` vérifiés contre un miroir, somme falsifiée refusée)
 - [x] README, guide d'installation, référence CLI, référence API, tableau des modèles
 
 ## Phase 8 — Validation de bout en bout et version 0.1.0 · [détail](docs/phases/phase-8-validation.md)
 
-- [ ] Installation réelle sur une machine propre (CPU)
-- [ ] Contrat d'API vérifié (health, models, chat stream/non-stream, embeddings, auth)
-- [ ] Désinstallation et purge vérifiées
-- [ ] Version 0.1.0 publiée sur `main`
+- [x] Script de validation `scripts/e2e.sh` (28 vérifications)
+- [x] Installation réelle avec le moteur Ollama et un modèle (Ubuntu 24.04, CPU, `qwen3:0.6b` + `all-minilm`)
+- [x] Contrat d'API vérifié : `/health`, `/v1/models`, authentification (401), routes d'administration fermées (404)
+- [x] Contrat d'API vérifié : chat (stream et non-stream, flux terminé par `data: [DONE]`) et embeddings
+- [x] Clés (création, limite RPM → 429, révocation → 401), configuration, sauvegarde/restauration vérifiées
+- [x] Désinstallation et purge vérifiées (aucun conteneur, réseau ni dossier restant)
+- [x] Version 0.1.0 fusionnée sur `main` avec le tag `v0.1.0` (publication GitHub au premier push)
