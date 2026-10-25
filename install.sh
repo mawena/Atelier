@@ -7,6 +7,7 @@
 #   ATELIER_VERSION   version à installer (défaut : la dernière)
 #   ATELIER_REPO      dépôt GitHub des versions (défaut : mawena/atelier)
 #   ATELIER_BIN_DIR   dossier d'installation du binaire (défaut : /usr/local/bin)
+#   ATELIER_BASE_URL  miroir des fichiers publiés (exige ATELIER_VERSION)
 #   ATELIER_NO_SETUP  si non vide : installe le binaire sans lancer « atelier install »
 set -eu
 
@@ -15,8 +16,9 @@ REPO="${ATELIER_REPO:-mawena/atelier}"
 BIN_DIR="${ATELIER_BIN_DIR:-/usr/local/bin}"
 VERSION="${ATELIER_VERSION:-}"
 
-say() { printf '\033[36m→\033[0m %s\n' "$*"; }
-die() { printf '\033[31m✘\033[0m %s\n' "$*" >&2; exit 1; }
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then C1='\033[36m'; C2='\033[31m'; C0='\033[0m'; else C1=''; C2=''; C0=''; fi
+say() { printf "${C1}→${C0} %s\n" "$*"; }
+die() { printf "${C2}✘${C0} %s\n" "$*" >&2; exit 1; }
 
 [ "$(uname -s)" = "Linux" ] || die "Linux uniquement."
 case "$(uname -m)" in
@@ -25,11 +27,14 @@ case "$(uname -m)" in
   *) die "architecture non prise en charge : $(uname -m) (amd64 ou arm64 requis)" ;;
 esac
 
-if [ "$(id -u)" -ne 0 ]; then
-  if command -v sudo >/dev/null 2>&1; then SUDO="sudo"; else die "relancez en root (sudo)."; fi
-else
-  SUDO=""
+# sudo seulement si nécessaire.
+SUDO=""
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
 fi
+need_root() {
+  [ "$(id -u)" -eq 0 ] || [ -n "$SUDO" ] || die "$1 : relancez en root (sudo)."
+}
 
 if command -v curl >/dev/null 2>&1; then
   fetch() { curl -fsSL --retry 3 -o "$2" "$1"; }
@@ -41,6 +46,9 @@ else
   die "curl ou wget est requis."
 fi
 
+if [ -n "${ATELIER_BASE_URL:-}" ] && [ -z "$VERSION" ]; then
+  die "ATELIER_BASE_URL exige ATELIER_VERSION."
+fi
 if [ -z "$VERSION" ]; then
   say "recherche de la dernière version"
   VERSION=$(fetch_stdout "https://api.github.com/repos/$REPO/releases/latest" \
@@ -50,7 +58,7 @@ fi
 VERSION="${VERSION#v}"
 
 ASSET="$APP-$ARCH-unknown-linux-musl"
-BASE="https://github.com/$REPO/releases/download/v$VERSION"
+BASE="${ATELIER_BASE_URL:-https://github.com/$REPO/releases/download/v$VERSION}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT INT TERM
 
@@ -69,8 +77,13 @@ fi
 [ "$EXPECTED" = "$ACTUAL" ] || die "somme de contrôle invalide (attendu $EXPECTED, obtenu $ACTUAL)"
 
 say "installation dans $BIN_DIR/$APP"
-$SUDO mkdir -p "$BIN_DIR"
-$SUDO install -m 0755 "$TMP/$ASSET" "$BIN_DIR/$APP"
+BIN_SUDO=""
+if ! { [ -w "$BIN_DIR" ] || { [ ! -e "$BIN_DIR" ] && [ -w "$(dirname "$BIN_DIR")" ]; }; }; then
+  need_root "écriture dans $BIN_DIR"
+  BIN_SUDO="$SUDO"
+fi
+$BIN_SUDO mkdir -p "$BIN_DIR"
+$BIN_SUDO install -m 0755 "$TMP/$ASSET" "$BIN_DIR/$APP"
 "$BIN_DIR/$APP" version
 
 if [ -n "${ATELIER_NO_SETUP:-}" ]; then
@@ -78,6 +91,7 @@ if [ -n "${ATELIER_NO_SETUP:-}" ]; then
   exit 0
 fi
 
+need_root "l'installation de la pile"
 # Sans terminal (curl | sh), les questions sont impossibles : on répond oui.
 if [ -t 0 ]; then
   exec $SUDO "$BIN_DIR/$APP" install "$@"

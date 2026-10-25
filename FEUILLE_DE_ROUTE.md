@@ -66,8 +66,8 @@ une branche `feature/*` par phase, `release/x.y.z` puis tag `vx.y.z`).
 
 - [x] `install.sh` (installation en une ligne)
 - [x] Mise à jour du CLI par `atelier update`
-- [ ] CI : format, lint, tests, binaires musl amd64/arm64 — workflow écrit, à valider au premier push GitHub
-- [ ] Publication des versions (binaires + sommes de contrôle) — workflow écrit, à valider au premier tag
+- [x] CI : format, lint, tests, binaires musl amd64/arm64 — validée localement (actionlint, étapes rejouées, compilation croisée zig) ; première exécution GitHub au premier push
+- [x] Publication des versions (binaires + sommes de contrôle) — simulée localement (install.sh et `update` vérifiés contre un miroir, somme falsifiée refusée)
 - [x] README, guide d'installation, référence CLI, référence API, tableau des modèles
 
 ## Phase 8 — Validation de bout en bout et version 0.1.0 · [détail](docs/phases/phase-8-validation.md)

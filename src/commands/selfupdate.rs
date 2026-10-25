@@ -28,16 +28,25 @@ pub fn asset_name() -> String {
 pub async fn run(to: Option<&str>) -> anyhow::Result<Option<PathBuf>> {
     let repo = repo();
     let http = http_client(Duration::from_secs(300));
-    let version = match to {
-        Some(v) => v.trim_start_matches('v').to_string(),
-        None => latest_version(&http, &repo).await?,
+    // Miroir des fichiers publiés (ATELIER_BASE_URL) : la version doit être donnée.
+    let mirror = std::env::var("ATELIER_BASE_URL")
+        .ok()
+        .filter(|u| !u.is_empty());
+    let version = match (to, &mirror) {
+        (Some(v), _) => v.trim_start_matches('v').to_string(),
+        (None, Some(_)) => {
+            return Err(crate::error::usage("ATELIER_BASE_URL exige --to <version>"));
+        }
+        (None, None) => latest_version(&http, &repo).await?,
     };
     if version == VERSION && to.is_none() {
         output::success(format!("CLI déjà à jour ({VERSION})"));
         return Ok(None);
     }
     output::step(format!("téléchargement de {APP} {version}"));
-    let base = format!("https://github.com/{repo}/releases/download/v{version}");
+    let base = mirror
+        .map(|m| m.trim_end_matches('/').to_string())
+        .unwrap_or_else(|| format!("https://github.com/{repo}/releases/download/v{version}"));
     let asset = asset_name();
     let binary = download(&http, &format!("{base}/{asset}")).await?;
     let sums = String::from_utf8(download(&http, &format!("{base}/SHA256SUMS")).await?)

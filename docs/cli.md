@@ -101,7 +101,7 @@ sudo atelier update --cli-only --to 0.2.0
 ```
 
 Le binaire est téléchargé depuis les versions publiées, vérifié (SHA-256) et
-remplacé atomiquement. Les images dont le dépôt est celui par défaut passent aux
+remplacé atomiquement (`ATELIER_BASE_URL` + `--to` pour passer par un miroir). Les images dont le dépôt est celui par défaut passent aux
 versions épinglées par le nouveau CLI ; les images personnalisées ne sont pas
 modifiées. Modèles, clés et données sont conservés.
 

@@ -33,8 +33,17 @@ Passer des options à `atelier install` :
 curl -fsSL .../install.sh | sudo sh -s -- --model qwen3:8b --webui
 ```
 
-Variables utiles : `ATELIER_VERSION=0.1.0` (version précise), `ATELIER_NO_SETUP=1`
-(binaire seul, sans lancer l'installation).
+Variables utiles :
+
+| Variable | Effet |
+|----------|-------|
+| `ATELIER_VERSION=0.1.0` | version précise (défaut : la dernière) |
+| `ATELIER_NO_SETUP=1` | installe le binaire sans lancer `atelier install` |
+| `ATELIER_BIN_DIR=/opt/bin` | dossier du binaire (défaut : `/usr/local/bin`) |
+| `ATELIER_REPO=org/depot` | dépôt GitHub des versions |
+| `ATELIER_BASE_URL=https://miroir/atelier/0.1.0` | miroir contenant les binaires et `SHA256SUMS` (exige `ATELIER_VERSION`) |
+
+Le binaire n'est installé que si sa somme SHA-256 correspond à `SHA256SUMS`.
 
 ## Ce que fait `atelier install`
 
