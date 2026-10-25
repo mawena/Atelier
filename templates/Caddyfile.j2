@@ -1,0 +1,78 @@
+# Généré par {{ app }} {{ version }} — ne pas modifier à la main.
+
+{
+	admin off
+{% if email %}
+	email {{ email }}
+{% endif %}
+{% if not domains %}
+	auto_https off
+{% endif %}
+}
+
+(api) {
+	# Contrat : GET /health -> {"status", "version"}, sans authentification.
+	@health path /health
+	handle @health {
+		rewrite * /health/readiness
+		reverse_proxy litellm:4000 {
+			@ready status 2xx
+			handle_response @ready {
+				header Content-Type application/json
+				respond `{"status":"ok","version":"{{ version }}"}` 200
+			}
+			handle_response {
+				header Content-Type application/json
+				respond `{"status":"degraded","version":"{{ version }}"}` 503
+			}
+		}
+	}
+
+	# API compatible OpenAI. Les flux SSE sont transmis sans tampon.
+	handle /v1/* {
+		reverse_proxy litellm:4000 {
+			flush_interval -1
+		}
+	}
+
+	# Tout le reste (administration de la passerelle comprise) est refusé.
+	handle {
+		header Content-Type application/json
+		respond `{"error":{"message":"Not found","type":"invalid_request_error","code":"not_found"}}` 404
+	}
+
+	handle_errors {
+		@healthdown path /health
+		handle @healthdown {
+			header Content-Type application/json
+			respond `{"status":"down","version":"{{ version }}"}` 503
+		}
+		handle {
+			header Content-Type application/json
+			respond `{"error":{"message":"Service unavailable","type":"api_error","code":"unavailable"}}` 502
+		}
+	}
+}
+
+# Accès local (et réseau si server.listen est ouvert).
+:8080 {
+	import api
+}
+{% if domain %}
+
+{{ domain }} {
+	import api
+}
+{% endif %}
+{% if webui %}
+
+:3000 {
+	reverse_proxy open-webui:8080
+}
+{% if webui_domain %}
+
+{{ webui_domain }} {
+	reverse_proxy open-webui:8080
+}
+{% endif %}
+{% endif %}

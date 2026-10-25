@@ -1,0 +1,29 @@
+# Généré par {{ app }} {{ version }} — ne pas modifier à la main.
+# La liste des modèles suit les modèles installés (« {{ app }} model … »).
+
+model_list:
+{% for m in models %}
+  - model_name: "{{ m.name }}"
+    litellm_params:
+      model: "{{ m.target }}"
+      api_base: "{{ m.api_base }}"
+{% if m.embedding %}
+    model_info:
+      mode: embedding
+{% else %}
+    model_info:
+      mode: chat
+{% endif %}
+{% else %}
+  []
+{% endfor %}
+
+litellm_settings:
+  drop_params: true
+  request_timeout: {{ timeout }}
+  json_logs: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: false

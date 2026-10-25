@@ -1,0 +1,159 @@
+# Généré par {{ app }} {{ version }} — ne pas modifier à la main.
+# Pour changer la configuration : « {{ app }} config set <clé> <valeur> ».
+
+name: {{ project }}
+
+networks:
+  # Réseau privé des services : aucun port publié hormis ceux de caddy
+  # (et l'administration de la passerelle sur 127.0.0.1).
+  front:
+    name: {{ project }}_front
+  # Réseau sans accès extérieur : base de données uniquement.
+  db:
+    name: {{ project }}_db
+    internal: true
+
+services:
+  caddy:
+    image: {{ images.caddy }}
+    restart: unless-stopped
+    ports:
+{% for p in caddy_ports %}
+      - "{{ p }}"
+{% endfor %}
+    volumes:
+      - {{ config_dir }}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - {{ data_dir }}/caddy/data:/data
+      - {{ data_dir }}/caddy/config:/config
+    networks: [front]
+    depends_on:
+      - litellm
+
+  litellm:
+    image: {{ images.litellm }}
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      DATABASE_URL: postgresql://litellm:${POSTGRES_PASSWORD}@postgres:5432/litellm
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+      DISABLE_ADMIN_UI: "True"
+      STORE_MODEL_IN_DB: "False"
+      LITELLM_LOG: "ERROR"
+    volumes:
+      - {{ config_dir }}/litellm.yaml:/app/config.yaml:ro
+    ports:
+      - "127.0.0.1:{{ admin_port }}:4000"
+    networks: [front, db]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=5)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  postgres:
+    image: {{ images.postgres }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_DB: litellm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - {{ data_dir }}/postgres:/var/lib/postgresql/data
+    networks: [db]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ollama:
+    image: {{ images.ollama }}
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_KEEP_ALIVE: "{{ engine.keep_alive }}"
+      OLLAMA_NUM_PARALLEL: "{{ engine.num_parallel }}"
+    volumes:
+      - {{ data_dir }}/ollama:/root/.ollama
+    networks: [front]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+{% if gpu %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+{% endif %}
+{% if vllm %}
+
+  vllm:
+    image: {{ images.vllm }}
+    restart: unless-stopped
+    command:
+      - "{{ engine.vllm_model }}"
+      - "--served-model-name"
+      - "{{ engine.vllm_model }}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+      - "--max-model-len"
+      - "{{ engine.vllm_max_model_len }}"
+      - "--gpu-memory-utilization"
+      - "{{ engine.vllm_gpu_memory_utilization }}"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    ipc: host
+    volumes:
+      - {{ data_dir }}/huggingface:/root/.cache/huggingface
+    networks: [front]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)\""]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 900s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+{% endif %}
+{% if webui %}
+
+  open-webui:
+    image: {{ images.webui }}
+    restart: unless-stopped
+    environment:
+      OPENAI_API_BASE_URL: http://litellm:4000/v1
+      OPENAI_API_KEY: ${WEBUI_API_KEY}
+      ENABLE_OLLAMA_API: "False"
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      WEBUI_URL: "{{ webui_url }}"
+      ENABLE_OPENAI_API: "True"
+{% if embedding_model %}
+      RAG_EMBEDDING_ENGINE: openai
+      RAG_EMBEDDING_MODEL: "{{ embedding_model }}"
+      RAG_OPENAI_API_BASE_URL: http://litellm:4000/v1
+      RAG_OPENAI_API_KEY: ${WEBUI_API_KEY}
+{% endif %}
+    volumes:
+      - {{ data_dir }}/webui:/app/backend/data
+    networks: [front]
+    depends_on:
+      - litellm
+{% endif %}
