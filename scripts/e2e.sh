@@ -16,8 +16,10 @@ MODEL="${E2E_MODEL:-qwen3:0.6b}"
 EMBED="${E2E_EMBED:-all-minilm}"
 URL="http://127.0.0.1:$PORT"
 
+WORK=$(mktemp -d)
+OUT="$WORK/out"
+mkdir -p "$OUT"
 if [ -z "${ATELIER_CONFIG_DIR:-}" ] && [ "$(id -u)" -ne 0 ]; then
-  WORK=$(mktemp -d)
   export ATELIER_CONFIG_DIR="$WORK/etc" ATELIER_DATA_DIR="$WORK/data"
 fi
 
@@ -39,14 +41,14 @@ cleanup() {
 trap cleanup EXIT
 
 echo "== installation"
-"$BIN" install --yes --port "$PORT" --model "$MODEL" --embedding-model "$EMBED" --key-name e2e --json > /tmp/atelier-e2e-install.json
-KEY=$(sed -n 's/.*"api_key": *"\([^"]*\)".*/\1/p' /tmp/atelier-e2e-install.json)
+"$BIN" install --yes --port "$PORT" --model "$MODEL" --embedding-model "$EMBED" --key-name e2e --json > "$OUT"/install.json
+KEY=$(sed -n 's/.*"api_key": *"\([^"]*\)".*/\1/p' "$OUT"/install.json)
 [ -n "$KEY" ] || ko "pas de clé dans la sortie de install"
 ok "install (clé créée)"
 
 echo "== idempotence"
-"$BIN" install --yes --port "$PORT" --json > /tmp/atelier-e2e-install2.json
-check "install relancé sans nouvelle clé" grep -q '"api_key": null' /tmp/atelier-e2e-install2.json
+"$BIN" install --yes --port "$PORT" --json > "$OUT"/install2.json
+check "install relancé sans nouvelle clé" grep -q '"api_key": null' "$OUT"/install2.json
 
 echo "== contrat d'API"
 check "GET /health → status ok + version" sh -c "curl -fsS $URL/health | grep -q '\"status\":\"ok\",\"version\":'"
@@ -54,24 +56,24 @@ code=$(curl -s -o /dev/null -w '%{http_code}' "$URL/v1/models")
 check "GET /v1/models sans clé → 401" [ "$code" = 401 ]
 code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer sk-faux" "$URL/v1/models")
 check "GET /v1/models clé invalide → 401" [ "$code" = 401 ]
-models=$(curl -fsS -H "Authorization: Bearer $KEY" "$URL/v1/models")
-check "GET /v1/models liste default" sh -c "echo '$models' | grep -q '\"id\":\"default\"'"
-check "GET /v1/models liste $MODEL" sh -c "echo '$models' | grep -q '\"id\":\"$MODEL\"'"
+curl -fsS -H "Authorization: Bearer $KEY" "$URL/v1/models" > "$OUT"/models.json
+check "GET /v1/models liste default" grep -q '"id":"default"' "$OUT"/models.json
+check "GET /v1/models liste $MODEL" grep -q "\"id\":\"$MODEL\"" "$OUT"/models.json
 code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $KEY" "$URL/key/list")
 check "routes d'administration non exposées (404)" [ "$code" = 404 ]
 
 body='{"model":"default","messages":[{"role":"user","content":"Dis bonjour."}],"max_tokens":32}'
-resp=$(curl -fsS -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$body" "$URL/v1/chat/completions")
-check "POST /v1/chat/completions (stream false)" sh -c "echo '$resp' | grep -q '\"choices\"'"
+curl -fsS -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$body" "$URL/v1/chat/completions" > "$OUT"/chat.json
+check "POST /v1/chat/completions (stream false)" grep -q '"choices"' "$OUT"/chat.json
 
 sbody='{"model":"default","stream":true,"messages":[{"role":"user","content":"Dis bonjour."}],"max_tokens":32}'
-curl -fsSN -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$sbody" "$URL/v1/chat/completions" > /tmp/atelier-e2e-stream.txt
-check "POST /v1/chat/completions (stream true) en SSE" grep -q '^data: {' /tmp/atelier-e2e-stream.txt
-check "flux terminé par data: [DONE]" sh -c "grep -v '^\s*$' /tmp/atelier-e2e-stream.txt | tail -n 1 | grep -q '^data: \[DONE\]'"
+curl -fsSN -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$sbody" "$URL/v1/chat/completions" > "$OUT"/stream.txt
+check "POST /v1/chat/completions (stream true) en SSE" grep -q '^data: {' "$OUT"/stream.txt
+check "flux terminé par data: [DONE]" sh -c "grep -v '^\s*$' $OUT/stream.txt | tail -n 1 | grep -q '^data: \[DONE\]'"
 
 ebody='{"model":"default-embedding","input":"Bonjour le monde"}'
-resp=$(curl -fsS -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$ebody" "$URL/v1/embeddings")
-check "POST /v1/embeddings renvoie un vecteur" sh -c "echo '$resp' | grep -q '\"embedding\":\['"
+curl -fsS -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d "$ebody" "$URL/v1/embeddings" > "$OUT"/embeddings.json
+check "POST /v1/embeddings renvoie un vecteur" grep -q '"embedding": *\[' "$OUT"/embeddings.json
 
 echo "== CLI"
 check "status --json" sh -c "'$BIN' status --json | grep -q '\"healthy\": true'"
@@ -83,7 +85,7 @@ check "model remove du défaut refusé (code 2)" sh -c "'$BIN' model remove '$MO
 
 echo "== clés"
 NEW=$("$BIN" key create e2e-temp --rpm 2 --json | sed -n 's/.*"key": *"\([^"]*\)".*/\1/p')
-ID=$("$BIN" key list --json | tr '{' '\n' | grep '"name": "e2e-temp"' | sed -n 's/.*"id": *"\([^"]*\)".*/\1/p')
+ID=$("$BIN" key list --json | tr -d '\n' | tr '{' '\n' | grep '"name": "e2e-temp"' | sed -n 's/.*"id": *"\([^"]*\)".*/\1/p')
 [ -n "$NEW" ] && [ -n "$ID" ] || ko "création de clé"
 ok "key create / list"
 code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $NEW" "$URL/v1/models")
@@ -103,13 +105,13 @@ echo "== configuration"
 check "config set invalide refusé (code 2)" sh -c "'$BIN' config set port abc >/dev/null 2>&1; [ \$? -eq 2 ]"
 
 echo "== sauvegarde"
-"$BIN" backup --output /tmp/atelier-e2e-backup.tar.gz >/dev/null
-check "backup créé" [ -s /tmp/atelier-e2e-backup.tar.gz ]
+"$BIN" backup --output "$OUT"/backup.tar.gz >/dev/null
+check "backup créé" [ -s "$OUT"/backup.tar.gz ]
 "$BIN" key revoke e2e >/dev/null
-"$BIN" restore /tmp/atelier-e2e-backup.tar.gz --yes >/dev/null
+"$BIN" restore "$OUT"/backup.tar.gz --yes >/dev/null
 code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $KEY" "$URL/v1/models")
 check "restore retrouve la clé révoquée après la sauvegarde" [ "$code" = 200 ]
-rm -f /tmp/atelier-e2e-backup.tar.gz
+rm -f "$OUT"/backup.tar.gz
 
 if [ -z "${E2E_KEEP:-}" ]; then
   echo "== désinstallation"

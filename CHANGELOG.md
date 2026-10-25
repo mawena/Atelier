@@ -3,7 +3,7 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versionnage
 [SemVer](https://semver.org/lang/fr/).
 
-## [0.1.0] — non publiée
+## [0.1.0] — 2026-10-25
 
 Première version.
 
@@ -28,3 +28,11 @@ Première version.
 - `install.sh` (installation en une ligne, somme SHA-256 vérifiée).
 - CI (format, lint, tests, binaires statiques) et publication sur tag.
 - Documentation : installation, référence CLI, référence API, modèles.
+- Variable `ATELIER_BASE_URL` pour installer ou mettre à jour depuis un miroir.
+- Script de validation de bout en bout `scripts/e2e.sh`.
+
+### Corrigé
+
+- Un modèle installé sans étiquette (`all-minilm`) est reconnu sous son nom
+  Ollama (`all-minilm:latest`) : l'alias `default-embedding` est bien créé et le
+  modèle est exposé sans le suffixe `:latest`.

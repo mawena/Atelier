@@ -66,6 +66,16 @@ struct LitellmEntry {
 
 /// Entrées de la passerelle : un modèle par modèle installé,
 /// plus les alias `default` et `default-embedding`.
+/// Vrai si deux noms désignent le même modèle (`qwen3` = `qwen3:latest`).
+pub fn same_model(a: &str, b: &str) -> bool {
+    !a.is_empty() && !b.is_empty() && public_name(a) == public_name(b)
+}
+
+/// Nom exposé par l'API : sans le suffixe `:latest` implicite.
+pub fn public_name(name: &str) -> &str {
+    name.strip_suffix(":latest").unwrap_or(name)
+}
+
 fn gateway_entries(cfg: &Config, models: &[ServedModel]) -> Vec<LitellmEntry> {
     let entry = |name: &str, m: &ServedModel| {
         let (target, api_base) = if m.vllm {
@@ -82,16 +92,19 @@ fn gateway_entries(cfg: &Config, models: &[ServedModel]) -> Vec<LitellmEntry> {
             embedding: m.embedding,
         }
     };
-    let mut out: Vec<LitellmEntry> = models.iter().map(|m| entry(&m.name, m)).collect();
+    let mut out: Vec<LitellmEntry> = models
+        .iter()
+        .map(|m| entry(public_name(&m.name), m))
+        .collect();
     if let Some(m) = models
         .iter()
-        .find(|m| m.name == cfg.engine.default_model && !m.embedding)
+        .find(|m| same_model(&m.name, &cfg.engine.default_model) && !m.embedding)
     {
         out.push(entry("default", m));
     }
     if let Some(m) = models
         .iter()
-        .find(|m| m.name == cfg.engine.embedding_model && m.embedding)
+        .find(|m| same_model(&m.name, &cfg.engine.embedding_model) && m.embedding)
     {
         out.push(entry("default-embedding", m));
     }
@@ -148,7 +161,7 @@ pub fn render(
     let vllm = cfg.engine.kind == EngineKind::Vllm && !cfg.engine.vllm_model.is_empty();
     let embedding_model = models
         .iter()
-        .find(|m| m.embedding && m.name == cfg.engine.embedding_model)
+        .find(|m| m.embedding && same_model(&m.name, &cfg.engine.embedding_model))
         .map(|_| "default-embedding")
         .unwrap_or("");
     let webui_url = cfg.webui_url().unwrap_or_default();
@@ -370,6 +383,31 @@ mod tests {
             r.litellm
                 .contains("master_key: os.environ/LITELLM_MASTER_KEY")
         );
+    }
+
+    #[test]
+    fn latest_tag_matches_configured_name() {
+        let mut c = cfg();
+        c.engine.embedding_model = "all-minilm".into();
+        let models = vec![
+            ServedModel {
+                name: "qwen3:4b".into(),
+                embedding: false,
+                vllm: false,
+            },
+            ServedModel {
+                name: "all-minilm:latest".into(),
+                embedding: true,
+                vllm: false,
+            },
+        ];
+        let r = render(&c, &paths(), false, &models).unwrap();
+        assert!(r.litellm.contains("model_name: \"default-embedding\""));
+        assert!(r.litellm.contains("model_name: \"all-minilm\""));
+        assert!(r.litellm.contains("model: \"ollama/all-minilm:latest\""));
+        assert!(!r.litellm.contains("model_name: \"all-minilm:latest\""));
+        assert!(same_model("qwen3", "qwen3:latest"));
+        assert!(!same_model("qwen3", "qwen3:4b"));
     }
 
     #[test]
